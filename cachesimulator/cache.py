@@ -22,6 +22,8 @@ class Cache(dict):
                     word_addr=WordAddress(i), num_addr_bits=num_index_bits)
                 self[index] = []
 
+        self.total_latency = 0
+
     # Every time we see an address, place it at the top of the
     # list of recently-seen addresses
     def mark_ref_as_last_seen(self, ref):
@@ -81,7 +83,8 @@ class Cache(dict):
 
     # Simulate the cache by reading the given address references into it
     def read_refs(self, num_blocks_per_set,
-                  num_words_per_block, replacement_policy, refs):
+                  num_words_per_block, replacement_policy, refs,
+                  hit_latency, miss_latency):
 
         for ref in refs:
             self.mark_ref_as_last_seen(ref)
@@ -90,10 +93,13 @@ class Cache(dict):
             if self.is_hit(ref.index, ref.tag):
                 # Give emphasis to hits in contrast to misses
                 ref.cache_status = ReferenceCacheStatus.hit
+                ref.latency = hit_latency
             else:
+                ref.latency = miss_latency
                 ref.cache_status = ReferenceCacheStatus.miss
                 self.set_block(
                     replacement_policy=replacement_policy,
                     num_blocks_per_set=num_blocks_per_set,
                     addr_index=ref.index,
                     new_entry=ref.get_cache_entry(num_words_per_block))
+            self.total_latency += ref.latency

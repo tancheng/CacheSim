@@ -12,6 +12,7 @@ class Reference(object):
 
     def __init__(self, word_addr, num_addr_bits,
                  num_offset_bits, num_index_bits, num_tag_bits):
+        self.org_addr = word_addr
         self.word_addr = WordAddress(word_addr)
         self.bin_addr = BinaryAddress(
             word_addr=self.word_addr, num_addr_bits=num_addr_bits)
@@ -19,6 +20,7 @@ class Reference(object):
         self.index = self.bin_addr.get_index(num_offset_bits, num_index_bits)
         self.tag = self.bin_addr.get_tag(num_tag_bits)
         self.cache_status = None
+        self.latency = 0
 
     def __str__(self):
         return str(OrderedDict(sorted(self.__dict__.items())))
@@ -32,7 +34,6 @@ class Reference(object):
             'data': self.word_addr.get_consecutive_words(
                 num_words_per_block)
         }
-
 
 # An enum representing the cache status of a reference (i.e. hit or miss)
 class ReferenceCacheStatus(Enum):

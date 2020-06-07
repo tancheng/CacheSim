@@ -6,6 +6,7 @@ import shutil
 from cachesimulator.bin_addr import BinaryAddress
 from cachesimulator.cache import Cache
 from cachesimulator.reference import Reference
+from cachesimulator.reference import ReferenceCacheStatus
 from cachesimulator.table import Table
 
 # The names of all reference table columns
@@ -25,6 +26,13 @@ class Simulator(object):
         return [Reference(
                 word_addr, num_addr_bits, num_offset_bits,
                 num_index_bits, num_tag_bits) for word_addr in word_addrs]
+
+    # Write the miss addresses into a file for the next level of cache
+    def write_miss_refs(sef, write_miss_file, refs):
+        with open(write_miss_file, "w") as file:
+            for ref in refs:
+                if ref.cache_status == ReferenceCacheStatus.miss:
+                    file.write(str(ref.org_addr)+"\n")
 
     # Displays details for each address reference, including its hit/miss
     # status
@@ -85,11 +93,13 @@ class Simulator(object):
                 ','.join(map(str, entry['data'])) for entry in blocks))
 
         print(table)
+        print("total latency: ", cache.total_latency)
 
     # Run the entire cache simulation
-    def run_simulation(self, num_blocks_per_set, num_words_per_block,
-                       cache_size, replacement_policy, num_addr_bits,
-                       word_addrs, word_addrs_trace):
+    def run(self, num_blocks_per_set, num_words_per_block,
+            cache_size, replacement_policy, num_addr_bits,
+            word_addrs, word_addrs_trace,
+            hit_latency, miss_latency, write_miss_file=None):
 
         if word_addrs_trace:
             new_words = []
@@ -121,12 +131,15 @@ class Simulator(object):
 
         cache.read_refs(
             num_blocks_per_set, num_words_per_block,
-            replacement_policy, refs)
+            replacement_policy, refs, hit_latency, miss_latency)
 
         # The character-width of all displayed tables
         # Attempt to fit table to terminal width, otherwise use default of 80
         table_width = max((shutil.get_terminal_size(
             (DEFAULT_TABLE_WIDTH, None)).columns, DEFAULT_TABLE_WIDTH))
+
+        if write_miss_file:
+          self.write_miss_refs(write_miss_file, refs)
 
         print()
         self.display_addr_refs(refs, table_width)
