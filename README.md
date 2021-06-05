@@ -1,5 +1,7 @@
 # Cache Simulator
 
+based on https://github.com/caleb531/cache-simulator
+
 ## Example
 
 ```sh
